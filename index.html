@@ -588,7 +588,7 @@
             messageText.className = 'message-text';
             
             // 顯示訊息和學生名單
-            if (data.students.length < 1) {
+            if (data.boradcast_student_names.length < 1) {
                 messageText.textContent = data.display_name;
             } else {
                 const studentNames = data.students.join('、');
