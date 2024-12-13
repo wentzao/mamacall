@@ -272,8 +272,8 @@
     <!-- 主要內容區域 -->
     <div class="main-content">
         <!-- LINE 登入覆蓋層 -->
-        <div id="lineLoginOverlay" class="line-login-overlay" style="display: none;">
-            <button id="lineLoginButton" class="line-login-button">
+        <div id="lineLoginOverlay" class="line-login-overlay">
+            <button id="lineLoginButton" class="line-login-button" style="display: none;">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" width="30" height="30" alt="LINE">
                 使用 LINE 登入
             </button>
@@ -281,7 +281,7 @@
 
         <!-- 原有的覆蓋層 -->
         <div id="overlay" class="overlay">
-            <button id="connectButton" class="connect-button">點我連線伺服器</button>
+            <button id="connectButton" class="connect-button">點我開啟聲音通知</button>
         </div>
 
         <audio id="notificationSound" preload="auto">
@@ -323,6 +323,7 @@
                     } else {
                         // 只在外部瀏覽器才顯示登入按鈕
                         document.getElementById('lineLoginOverlay').style.display = 'flex';
+                        document.getElementById('lineLoginButton').style.display = 'block';
                         document.getElementById('lineLoginButton').addEventListener('click', () => {
                             liff.login();
                         });
