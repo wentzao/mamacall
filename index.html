@@ -588,8 +588,12 @@
             messageText.className = 'message-text';
             
             // 顯示訊息和學生名單
-            const studentNames = data.students.join('、');
-            messageText.textContent = `${studentNames}`;
+            if (data.students.length < 1) {
+                messageText.textContent = data.display_name;
+            } else {
+                const studentNames = data.students.join('、');
+                messageText.textContent = `${studentNames}`;
+            }
             
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
