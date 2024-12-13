@@ -3,16 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>語音廣播系統 2025</title>
+    <title>語音廣播系統</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
             background-color: #f5f5f5;
+        }
+
+        /* 導航欄樣式 */
+        .navbar {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0 20px;
+            z-index: 100;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .user-profile {
+            position: relative;
+        }
+
+        .profile-image {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #4CAF50;
+            transition: border-color 0.3s;
+        }
+
+        .profile-image:hover {
+            border-color: #45a049;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            padding: 8px 0;
+            min-width: 150px;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 8px 16px;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* 修改主要內容區域，為導航欄留出空間 */
+        .main-content {
+            max-width: 800px;
+            margin: 80px auto 20px;
+            padding: 0 20px;
+        }
+
+        /* 在移動設備上隱藏導航欄 */
+        @media (max-width: 768px) {
+            .navbar {
+                display: none !important;
+            }
+            .main-content {
+                margin-top: 20px;
+            }
         }
 
         /* LINE 登入覆蓋層 */
@@ -176,33 +258,47 @@
     </style>
 </head>
 <body>
-    <!-- LINE 登入覆蓋層 -->
-    <div id="lineLoginOverlay" class="line-login-overlay">
-        <button id="lineLoginButton" class="line-login-button">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" width="30" height="30" alt="LINE">
-            使用 LINE 登入
-        </button>
-    </div>
+    <!-- 導航欄 -->
+    <nav class="navbar">
+        <div class="navbar-brand">語音廣播系統</div>
+        <div class="user-profile">
+            <img id="profileImage" class="profile-image" src="" alt="用戶頭像">
+            <div id="dropdownMenu" class="dropdown-menu">
+                <div class="dropdown-item" id="logoutButton">登出</div>
+            </div>
+        </div>
+    </nav>
 
-    <!-- 原有的覆蓋層 -->
-    <div id="overlay" class="overlay">
-        <button id="connectButton" class="connect-button">連線伺服器</button>
-    </div>
+    <!-- 主要內容區域 -->
+    <div class="main-content">
+        <!-- LINE 登入覆蓋層 -->
+        <div id="lineLoginOverlay" class="line-login-overlay">
+            <button id="lineLoginButton" class="line-login-button">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" width="30" height="30" alt="LINE">
+                使用 LINE 登入
+            </button>
+        </div>
 
-    <audio id="notificationSound" preload="auto">
-        <source src="./ding.mp3" type="audio/mpeg">
-    </audio>
+        <!-- 原有的覆蓋層 -->
+        <div id="overlay" class="overlay">
+            <button id="connectButton" class="connect-button">連線伺服器</button>
+        </div>
 
-    <!-- 原有內容 -->
-    <div class="clock" id="clock">00:00</div>
-    
-    <div class="controls">
-        <label for="voiceSelect">選擇語音：</label>
-        <select id="voiceSelect"></select>
-    </div>
+        <audio id="notificationSound" preload="auto">
+            <source src="./ding.mp3" type="audio/mpeg">
+        </audio>
 
-    <div class="message-list" id="messageList">
-        <!-- 訊息卡片會動態插入這裡 -->
+        <!-- 原有內容 -->
+        <div class="clock" id="clock">00:00</div>
+        
+        <div class="controls">
+            <label for="voiceSelect">選擇語音：</label>
+            <select id="voiceSelect"></select>
+        </div>
+
+        <div class="message-list" id="messageList">
+            <!-- 訊息卡片會動態插入這裡 -->
+        </div>
     </div>
 
     <script>
@@ -236,32 +332,23 @@
                 const profile = await liff.getProfile();
                 userId = profile.userId;
                 console.log('LINE 登入成功, userId:', userId);
-
-                // 向後端驗證教師身分
-                const response = await fetch('https://teacherbackup.wentzao.com/checkteacherauth', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `userId=${userId}`
-                });
-
-                const data = await response.json();
                 
-                if (data.result === '200') {
-                    // 是學校老師，繼續流程
-                    document.getElementById('lineLoginOverlay').style.display = 'none';
-                    document.getElementById('overlay').style.display = 'flex';
-                } else {
-                    // 不是學校老師，關閉 LIFF
-                    alert('抱歉，此系統僅供文藻教師使用');
-                    liff.closeWindow();
+                // 設置用戶頭像
+                document.getElementById('profileImage').src = profile.pictureUrl;
+                
+                // 顯示導航欄（在桌面版）
+                if (window.innerWidth > 768) {
+                    document.querySelector('.navbar').style.display = 'flex';
                 }
                 
+                // 隱藏 LINE 登入覆蓋層
+                document.getElementById('lineLoginOverlay').style.display = 'none';
+                // 顯示連接伺服器覆蓋層
+                document.getElementById('overlay').style.display = 'flex';
+                
             } catch (error) {
-                console.error('驗證失敗:', error);
-                alert('身分驗證失敗，請重新登入');
-                liff.closeWindow();
+                console.error('獲取用戶資料失敗:', error);
+                alert('無法獲取用戶資料，請重新登入');
             }
         }
 
@@ -303,7 +390,7 @@
 
         const system = detectSystem();
 
-        // 只在非移動設備上初始化語音合成
+        // 只在��移動設備上初始化語音合成
         if (!system.isMobile) {
             speechSynth = window.speechSynthesis;
             
@@ -402,7 +489,7 @@
                     overlay.remove();
                 }, 300);
             } catch (error) {
-                console.error('無法啟用���效播放:', error);
+                console.error('無法啟用音效播放:', error);
                 alert('無法啟用音效播放，請確保允許網站播放音效');
             }
         });
@@ -435,7 +522,7 @@
                     // 分割每個學生的資料
                     console.log(boradcast_student_names);
                     
-                    // 為每個學生建立語音序��
+                    // 為每個學生建立語音序
                     for (const [className, engName, zhName] of boradcast_student_names) {
                         // 英文語音 - 班級和英文名
                         const engUtterance = new SpeechSynthesisUtterance(`${className} ${engName}`);
@@ -461,7 +548,7 @@
 
         // 測試音效播放
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('頁面載入完成，���效元素狀態:', {
+            console.log('頁面載入完成，音效元素狀態:', {
                 'audio元素是否存在': !!notificationSound,
                 '音效來源': notificationSound.currentSrc,
                 '準備狀態': notificationSound.readyState,
@@ -532,7 +619,7 @@
             }
         }
 
-        // Socket.IO 連接和事件處理
+        // Socket.IO 連接���事件處理
         const socket = io('https://student.wentzao.com', {
             path: '/socket.io/',
             transports: ['websocket'],
@@ -619,6 +706,29 @@
         socket.on('delete_error', (error) => {
             console.error('刪除失敗:', error);
             alert('刪除失敗，請稍後再試');
+        });
+
+        // 頭像下拉選單控制
+        document.getElementById('profileImage').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('dropdownMenu').classList.toggle('show');
+        });
+
+        // 點擊其他地方關閉下拉選單
+        document.addEventListener('click', () => {
+            document.getElementById('dropdownMenu').classList.remove('show');
+        });
+
+        // 登出功能
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            try {
+                await liff.logout();
+                // 重新載入頁面
+                window.location.reload();
+            } catch (error) {
+                console.error('登出失敗:', error);
+                alert('登出失敗，請稍後再試');
+            }
         });
     </script>
 </body>
