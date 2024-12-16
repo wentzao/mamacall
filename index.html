@@ -356,7 +356,7 @@
                     loginOverlay.style.display = 'none';
                 }
 
-                // 顯示連接伺��器覆蓋層
+                // 顯示連接伺服器覆蓋層
                 document.getElementById('overlay').style.display = 'flex';
                 
             } catch (error) {
@@ -526,7 +526,7 @@
                         await notificationSound.play();
                         console.log('通知音效播放成功');
                     } catch (error) {
-                        console.error('播放音效時發生錯誤:', error);
+                        console.error('播���音效時發生錯誤:', error);
                     }
                 }
             } else {
@@ -589,7 +589,7 @@
 
         // 連接狀態監控
         socket.on('connect', () => {
-            console.log('已連接到伺服器');
+            console.log('已連��到伺服器');
             console.log('Transport type:', socket.io.engine.transport.name);
             console.log('Protocol:', socket.io.engine.transport.ws ? 'WebSocket' : 'HTTP');
             
@@ -603,23 +603,10 @@
             console.log(`成功加入房間: ${room}`);
         });
 
-        // 接收通知
-        socket.on('pickup_notification', (data) => {
-            console.log('收到接送通知:', data);
-            createMessageCard(data);
-        });
-
-        // 發送刪除通知到 mamacall room
-        function sendDeleteNotification(cardId, timestamp) {
-            socket.emit('delete_notification', {
-                room: 'mamacall',
-                cardId: cardId,
-                timestamp: timestamp
-            });
-        }
-
         // 創建訊息卡片
         function createMessageCard(data) {
+            console.log('創建卡片，收到的資料:', data);  // 新增除錯日誌
+            
             const card = document.createElement('div');
             // 添加唯一ID，用於刪除時識別
             const cardId = `card-${data.timestamp.replace(/[^0-9]/g, '')}`;
@@ -637,18 +624,34 @@
             messageText.className = 'message-text';
             
             // 顯示訊息和學生名單
-            if (data.boradcast_student_names && data.boradcast_student_names.length > 0) {
+            if (Array.isArray(data.boradcast_student_names) && data.boradcast_student_names.length > 0) {
                 // 處理廣播學生名單
-                const studentInfo = data.boradcast_student_names.map(([className, engName, zhName]) => 
-                    `${className} ${zhName}(${engName})`
-                ).join('、');
+                const studentInfo = data.boradcast_student_names.map(student => {
+                    if (Array.isArray(student)) {
+                        const [className, engName, zhName] = student;
+                        return `${className} ${zhName}(${engName})`;
+                    }
+                    return student;
+                }).join('、');
                 messageText.textContent = studentInfo;
-            } else if (data.students && data.students.length > 0) {
+                
+                // 播放通知音效
+                playNotification(data.message, data.boradcast_student_names);
+            } else if (Array.isArray(data.students) && data.students.length > 0) {
                 // 處理一般學生名單
                 messageText.textContent = data.students.join('、');
+                // 播放一般通知音效
+                playNotification(data.message, []);
             } else if (data.display_name) {
                 // 顯示其他類型的訊息
                 messageText.textContent = data.display_name;
+                // 播放一般通知音效
+                playNotification(data.message, []);
+            } else {
+                // 如果都沒有，顯示原始訊息
+                messageText.textContent = data.message || '未知訊息';
+                // 播放一般通知音效
+                playNotification(data.message, []);
             }
             
             const deleteBtn = document.createElement('button');
@@ -668,12 +671,27 @@
             const messageList = document.getElementById('messageList');
             messageList.insertBefore(card, messageList.firstChild);
             
-            // 播放通知音效
-            if (data.boradcast_student_names) {
-                playNotification(data.message, data.boradcast_student_names);
-            }
-            
             return card;
+        }
+
+        // 接收通知
+        socket.on('pickup_notification', (data) => {
+            console.log('收到接送通知:', data);  // 保持這個日誌
+            try {
+                createMessageCard(data);
+            } catch (error) {
+                console.error('創建訊息卡片時發生錯誤:', error);
+                console.error('錯誤的資料:', data);
+            }
+        });
+
+        // 發送刪除通知到 mamacall room
+        function sendDeleteNotification(cardId, timestamp) {
+            socket.emit('delete_notification', {
+                room: 'mamacall',
+                cardId: cardId,
+                timestamp: timestamp
+            });
         }
 
         // 刪除卡片的函數
