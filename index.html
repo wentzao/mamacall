@@ -356,7 +356,7 @@
                     loginOverlay.style.display = 'none';
                 }
 
-                // 顯示連接伺服器覆蓋層
+                // 顯示連接伺��器覆蓋層
                 document.getElementById('overlay').style.display = 'flex';
                 
             } catch (error) {
@@ -627,12 +627,16 @@
         function removeCard(cardId) {
             const card = document.getElementById(cardId);
             if (card) {
-                // 添加移除中的類別來觸發過渡效果
                 card.classList.add('removing');
-                // 等待過渡效果完成後移除元素
                 setTimeout(() => {
                     card.remove();
-                }, 200); // 配合 CSS transition 時間
+                }, 200);
+
+                // 發送刪除事件到特定房間
+                socket.emit('delete_notification', { 
+                    cardId: cardId,
+                    room: 'mamacall'
+                });
             }
         }
 
@@ -659,6 +663,15 @@
             console.log('已連接到伺服器');
             console.log('Transport type:', socket.io.engine.transport.name);
             console.log('Protocol:', socket.io.engine.transport.ws ? 'WebSocket' : 'HTTP');
+            
+            // 連接成功後加入房間
+            socket.emit('join_room', 'mamacall', (response) => {
+                if (response.success) {
+                    console.log('成功加入 mamacall 房間');
+                } else {
+                    console.error('加入房間失敗:', response.error);
+                }
+            });
         });
 
         socket.on('connect_error', (error) => {
@@ -686,9 +699,10 @@
         // 接收通知時播放音效
         socket.on('pickup_notification', (data) => {
             console.log('收到接送通知:', data);
-            createMessageCard(data);
-            // 播放通知音效
-            playNotification(data.message, data.students.join('、'));
+            if (data.room === 'mamacall') {
+                createMessageCard(data);
+                playNotification(data.message, data.boradcast_student_names);
+            }
         });
 
         socket.on('disconnect', (reason) => {
@@ -716,7 +730,9 @@
         // 監聽其他使用者的刪除事件
         socket.on('notification_deleted', (data) => {
             console.log('收到刪除通知:', data);
-            removeCard(data.cardId);
+            if (data.room === 'mamacall') {
+                removeCard(data.cardId);
+            }
         });
 
         // 監聽刪除錯誤
