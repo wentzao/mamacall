@@ -312,6 +312,12 @@
                 await liff.init({ liffId: "1655533540-137Z3L6l" });
                 console.log('LIFF 初始化成功');
                 
+                // 請求通知權限
+                if ("Notification" in window) {
+                    const permission = await Notification.requestPermission();
+                    console.log('通知權限狀態:', permission);
+                }
+
                 // 檢查是否在 LIFF 環境中
                 if (liff.isInClient()) {
                     // 在 LIFF 瀏覽器中，直接取得用戶資料
@@ -683,18 +689,48 @@
             console.error('重新連接失敗，已達到最大嘗試次數');
         });
 
+        // 發送瀏覽器通知
+        function sendBrowserNotification(title, options = {}) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                try {
+                    const notification = new Notification(title, {
+                        icon: './notification-icon-192x192.png',  // 建議使用 192x192 像素的圖示
+                        badge: './notification-badge-72x72.png',  // 用於 Android 的小圖示
+                        ...options
+                    });
+
+                    // 點擊通知時打開/聚焦網頁
+                    notification.onclick = () => {
+                        window.focus();
+                    };
+                } catch (error) {
+                    console.error('發送通知失敗:', error);
+                }
+            }
+        }
+
         // 接收通知時播放音效
         socket.on('pickup_notification', (data) => {
             console.log('收到接送通知:', data);
             createMessageCard(data);
+
+            // 發送瀏覽器通知
+            const studentNames = data.students.join('、');
+            sendBrowserNotification('接送通知', {
+                body: `${studentNames}`,
+                tag: 'pickup-notification',  // 避免重複通知
+                renotify: true,  // 允許重複通知發出聲音
+                requireInteraction: true  // 通知不會自動消失
+            });
+
             // 播放通知音效
-            playNotification(data.message, data.students.join('、'));
+            playNotification(data.message, data.boradcast_student_names);
         });
 
         socket.on('disconnect', (reason) => {
             console.log('與伺服器斷開連接，原因:', reason);
             if (reason === 'io server disconnect') {
-                // 服務器主動斷開連接，需要手動重連
+                // 服務器主動斷開連接，需��手動重連
                 socket.connect();
             }
             // 其他情況會自動嘗試重連
