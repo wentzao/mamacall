@@ -356,7 +356,7 @@
                     loginOverlay.style.display = 'none';
                 }
 
-                // 顯示連接伺��器覆蓋層
+                // 顯示連接伺服器覆蓋層
                 document.getElementById('overlay').style.display = 'flex';
                 
             } catch (error) {
@@ -509,7 +509,7 @@
 
         // 音效載入檢查
         notificationSound.addEventListener('loadeddata', () => {
-            console.log('音效檔案已成功���入');
+            console.log('音效檔案已成功載入');
         });
 
         notificationSound.addEventListener('error', (e) => {
@@ -627,15 +627,12 @@
         function removeCard(cardId) {
             const card = document.getElementById(cardId);
             if (card) {
+                // 添加移除中的類別來觸發過渡效果
                 card.classList.add('removing');
+                // 等待過渡效果完成後移除元素
                 setTimeout(() => {
                     card.remove();
-                    // 發送刪除事件到 mamacall room
-                    socket.emit('delete_notification', {
-                        cardId: cardId,
-                        room: 'mamacall'
-                    });
-                }, 200);
+                }, 200); // 配合 CSS transition 時間
             }
         }
 
@@ -643,7 +640,7 @@
         const socket = io('https://student.wentzao.com', {
             path: '/socket.io/',
             transports: ['websocket'],
-            upgrade: false,
+            upgrade: false,  // 禁用傳輸升級
             rememberUpgrade: false,
             timeout: 10000,
             reconnection: true,
@@ -662,15 +659,6 @@
             console.log('已連接到伺服器');
             console.log('Transport type:', socket.io.engine.transport.name);
             console.log('Protocol:', socket.io.engine.transport.ws ? 'WebSocket' : 'HTTP');
-            
-            // 加入 mamacall room
-            socket.emit('join', 'mamacall', (response) => {
-                if (response.success) {
-                    console.log('成功加入 mamacall room');
-                } else {
-                    console.error('加入 room 失敗:', response.error);
-                }
-            });
         });
 
         socket.on('connect_error', (error) => {
@@ -689,13 +677,6 @@
 
         socket.on('reconnect', (attemptNumber) => {
             console.log(`重新連接成功 (嘗試次數: ${attemptNumber})`);
-            socket.emit('join', 'mamacall', (response) => {
-                if (response.success) {
-                    console.log('重新連接後成功加入 mamacall room');
-                } else {
-                    console.error('重新連接後加入 room 失敗:', response.error);
-                }
-            });
         });
 
         socket.on('reconnect_failed', () => {
@@ -705,11 +686,9 @@
         // 接收通知時播放音效
         socket.on('pickup_notification', (data) => {
             console.log('收到接送通知:', data);
-            if (data.room === 'mamacall') {
-                createMessageCard(data);
-                // 播放通知音效
-                playNotification(data.message, data.boradcast_student_names);
-            }
+            createMessageCard(data);
+            // 播放通知音效
+            playNotification(data.message, data.students.join('、'));
         });
 
         socket.on('disconnect', (reason) => {
@@ -737,9 +716,7 @@
         // 監聽其他使用者的刪除事件
         socket.on('notification_deleted', (data) => {
             console.log('收到刪除通知:', data);
-            if (data.room === 'mamacall') {
-                removeCard(data.cardId);
-            }
+            removeCard(data.cardId);
         });
 
         // 監聽刪除錯誤
@@ -772,19 +749,6 @@
                 console.error('登出失敗:', error);
                 alert('登出失敗，請稍後再試');
             }
-        });
-
-        // 監聽 room 相關事件
-        socket.on('room_error', (error) => {
-            console.error('Room 操作失敗:', error);
-        });
-
-        socket.on('user_joined', (data) => {
-            console.log(`使用者 ${data.userId} 加入了 ${data.room} room`);
-        });
-
-        socket.on('user_left', (data) => {
-            console.log(`使用者 ${data.userId} 離開了 ${data.room} room`);
         });
     </script>
 </body>
