@@ -21,7 +21,7 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 60px;
+            height: 40px;
             background-color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             padding: 0 20px;
@@ -41,12 +41,15 @@
         }
 
         .profile-image {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             cursor: pointer;
             border: 2px solid #4CAF50;
             transition: border-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .profile-image:hover {
@@ -171,6 +174,7 @@
         }
 
         .controls {
+            display: none;
             background: white;
             padding: 15px;
             border-radius: 8px;
@@ -314,7 +318,7 @@
 
     <!-- 主要內容區域 -->
     <div class="main-content">
-        <!-- LINE 登入覆蓋層 -->
+        <!-- LINE ���入覆蓋層 -->
         <div id="lineLoginOverlay" class="line-login-overlay">
             <button id="lineLoginButton" class="line-login-button" style="display: none;">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" width="30" height="30" alt="LINE">
@@ -614,7 +618,7 @@
                     console.log(boradcast_student_names);
                     
                     // 重複兩次的迴圈
-                    
+
                     for (let i = 0; i < 2; i++) {
                         // 為每個學生建立語音序
                         for (const [className, engName, zhName] of boradcast_student_names) {
@@ -772,7 +776,7 @@
                 try {
                     const notification = new Notification(title, {
                         icon: './notification-icon-192x192.png',  // 建議使用 192x192 像素的圖示
-                        badge: './notification-badge-72x72.png',  // 用�� Android 的小圖示
+                        badge: './notification-badge-72x72.png',  // 用於 Android 的小圖示
                         ...options
                     });
 
