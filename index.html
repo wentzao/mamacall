@@ -613,24 +613,29 @@
                     // 分割每個學生的資料
                     console.log(boradcast_student_names);
                     
-                    // 為每個學生建立語音序
-                    for (const [className, engName, zhName] of boradcast_student_names) {
-                        // 英文語音 - 班級和英文名
-                        const engUtterance = new SpeechSynthesisUtterance(`${className} ${engName}`);
-                        const engVoice = voices.find(voice => voice.lang === 'en-US');
-                        engUtterance.voice = engVoice;
-                        speechSynth.speak(engUtterance);
-                        
-                        // 中文語音 - 中文名
-                        const zhUtterance = new SpeechSynthesisUtterance(zhName);
-                        const zhVoice = voices.find(voice => voice.lang === 'zh-TW');
-                        zhUtterance.voice = zhVoice;
-                        speechSynth.speak(zhUtterance);
+                    // 重複兩次的迴圈
+                    
+                    for (let i = 0; i < 2; i++) {
+                        // 為每個學生建立語音序
+                        for (const [className, engName, zhName] of boradcast_student_names) {
+                            // 英文語音 - 班級和英文名
+                            const engUtterance = new SpeechSynthesisUtterance(`${className} ${engName}`);
+                            const engVoice = voices.find(voice => voice.lang === 'en-US');
+                            engUtterance.voice = engVoice;
+                            speechSynth.speak(engUtterance);
+                            
+                            // 中文語音 - 中文名
+                            const zhUtterance = new SpeechSynthesisUtterance(zhName);
+                            const zhVoice = voices.find(voice => voice.lang === 'zh-TW');
+                            zhUtterance.voice = zhVoice;
+                            speechSynth.speak(zhUtterance);
+                        }
                     }
                     
-                    // 最後用英文說 go home
-                    const endUtterance = new SpeechSynthesisUtterance('go home');
-                    const endVoice = voices.find(voice => voice.lang === 'en-US');
+                    
+                    // 最後用中文說請準備
+                    const endUtterance = new SpeechSynthesisUtterance('請準備');
+                    const endVoice = voices.find(voice => voice.lang === 'zh-TW');
                     endUtterance.voice = endVoice;
                     speechSynth.speak(endUtterance);
                 }
